@@ -1,23 +1,26 @@
 version: 0.2
 
-env:
-  variables:
-    IMAGE_NAME: "jose-app"
-
 phases:
   pre_build:
     commands:
-      - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+      - echo Logging into Amazon ECR...
+      - aws --version
+      - ECR_URI=503427798973.dkr.ecr.us-east-1.amazonaws.com
+      - IMAGE_NAME=jose-app
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_URI
+
   build:
     commands:
-      - echo Build Docker image...
-      - docker build -t $IMAGE_NAME .
-      - docker tag $IMAGE_NAME:latest $ECR_REGISTRY/$IMAGE_NAME:latest
+      - echo Building Docker image...
+      - docker build -t $IMAGE_NAME:latest .
+      - docker tag $IMAGE_NAME:latest $ECR_URI/$IMAGE_NAME:latest
+
   post_build:
     commands:
-      - docker push $ECR_REGISTRY/$IMAGE_NAME:latest
-      - printf '[{"name":"jose-app","imageUri":"%s"}]' "$ECR_REGISTRY/$IMAGE_NAME:latest" > imagedefinitions.json
+      - echo Pushing Docker image to ECR...
+      - docker push $ECR_URI/$IMAGE_NAME:latest
+      - echo Writing image definitions file...
+      - printf '{"ImageURI":"%s/%s:latest"}' $ECR_URI $IMAGE_NAME > imagedefinitions.json
 
 artifacts:
   files:
